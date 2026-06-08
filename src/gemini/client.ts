@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { config } from "../config.js";
+import { resolveScopes } from "../auth/gemini-auth.js";
 
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const MAX_RETRIES = 3;
@@ -14,7 +15,10 @@ function getClient(): GoogleGenAI {
       vertexai: true,
       project: config.gcpProjectId,
       location: config.gcpLocation,
-      googleAuthOptions: { keyFile: config.googleApplicationCredentials },
+      googleAuthOptions: {
+        keyFile: config.googleApplicationCredentials,
+        scopes: resolveScopes(),
+      },
     });
   }
   return genaiInstance;

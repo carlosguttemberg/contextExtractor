@@ -8,6 +8,9 @@
   },
   "scripts": {
     "dev": "tsx src/index.ts",
+    "check-auth": "tsx src/auth/check.ts",
+    "generate": "tsx src/index.ts generate",
+    "push": "tsx src/index.ts push",
     "build": "tsc",
     "start": "node dist/index.js"
   },
