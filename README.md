@@ -37,26 +37,21 @@ Copie o arquivo de exemplo e edite com seus valores:
 cp .env.example .env
 ```
 
-Abra `.env` e preencha:
+Abra `.env`. **A única variável obrigatória é o caminho da service account:**
 
 ```env
-# Caminho para o JSON da service account do Google Cloud
 GOOGLE_APPLICATION_CREDENTIALS=./credentials/service-account.json
-
-# ID do projeto no GCP (obrigatório)
-GCP_PROJECT_ID=meu-projeto-gcp
-
-# Região do Vertex AI (padrão: us-central1)
-GCP_LOCATION=us-central1
-
-# Modelo Gemini (padrão: gemini-2.5-pro)
-GEMINI_MODEL=gemini-2.5-pro
-
-# Pastas (os padrões já funcionam para a estrutura do repo)
-PROMPTS_DIR=./prompts
-GRAPH_SCHEMA_DIR=./graph-schema
-OUTPUT_DIR=./output
 ```
+
+O `project_id` é lido automaticamente do próprio JSON — não é necessário defini-lo. Todas as demais variáveis são opcionais e já têm valores padrão:
+
+| Variável | Padrão |
+|----------|--------|
+| `GCP_LOCATION` | `us-central1` |
+| `GEMINI_MODEL` | `gemini-2.5-pro` |
+| `PROMPTS_DIR` | `./prompts` |
+| `GRAPH_SCHEMA_DIR` | `./graph-schema` |
+| `OUTPUT_DIR` | `./output` |
 
 ### 2. Service Account
 
@@ -241,8 +236,7 @@ contextExtractor/
 
 | Variável | Obrigatória | Padrão | Descrição |
 |----------|-------------|--------|-----------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | sim | — | Caminho do JSON da service account |
-| `GCP_PROJECT_ID` | sim | — | ID do projeto no GCP |
+| `GOOGLE_APPLICATION_CREDENTIALS` | sim | — | Caminho do JSON da service account (o `project_id` é lido deste arquivo) |
 | `GCP_LOCATION` | não | `us-central1` | Região do Vertex AI |
 | `GEMINI_MODEL` | não | `gemini-2.5-pro` | Modelo Gemini a usar |
 | `PROMPTS_DIR` | não | `./prompts` | Pasta dos prompts `.md` |

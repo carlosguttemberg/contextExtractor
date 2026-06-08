@@ -19,11 +19,21 @@ function loadEnv(): void {
   }
 }
 
+function readProjectIdFromJson(credPath: string): string | undefined {
+  try {
+    const raw = readFileSync(resolve(credPath), "utf-8");
+    const json = JSON.parse(raw) as { project_id?: string };
+    return json.project_id;
+  } catch {
+    return undefined;
+  }
+}
+
 loadEnv();
 
 const ConfigSchema = z.object({
   googleApplicationCredentials: z.string().min(1, "GOOGLE_APPLICATION_CREDENTIALS é obrigatório"),
-  gcpProjectId: z.string().min(1, "GCP_PROJECT_ID é obrigatório"),
+  gcpProjectId: z.string().min(1, "project_id não encontrado — defina GCP_PROJECT_ID ou verifique o JSON da service account"),
   gcpLocation: z.string().default("us-central1"),
   geminiModel: z.string().default("gemini-2.5-pro"),
   promptsDir: z.string().default("./prompts"),
@@ -37,9 +47,12 @@ const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 
 function buildConfig(): Config {
+  const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS ?? "";
+  const projectIdFromJson = credPath ? readProjectIdFromJson(credPath) : undefined;
+
   const result = ConfigSchema.safeParse({
-    googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-    gcpProjectId: process.env.GCP_PROJECT_ID,
+    googleApplicationCredentials: credPath,
+    gcpProjectId: process.env.GCP_PROJECT_ID ?? projectIdFromJson,
     gcpLocation: process.env.GCP_LOCATION,
     geminiModel: process.env.GEMINI_MODEL,
     promptsDir: process.env.PROMPTS_DIR,
