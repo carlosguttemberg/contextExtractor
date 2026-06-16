@@ -42,6 +42,10 @@ const ConfigSchema = z.object({
   neo4jUri: z.string().optional(),
   neo4jUser: z.string().optional(),
   neo4jPassword: z.string().optional(),
+  confluenceBaseUrl: z.string().optional(),
+  confluenceEmail: z.string().optional(),
+  confluenceApiKey: z.string().optional(),
+  confluenceOutputDir: z.string().default("./output/confluence"),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -61,6 +65,10 @@ function buildConfig(): Config {
     neo4jUri: process.env.NEO4J_URI,
     neo4jUser: process.env.NEO4J_USER,
     neo4jPassword: process.env.NEO4J_PASSWORD,
+    confluenceBaseUrl: process.env.CONFLUENCE_BASE_URL,
+    confluenceEmail: process.env.CONFLUENCE_EMAIL,
+    confluenceApiKey: process.env.CONFLUENCE_API_KEY,
+    confluenceOutputDir: process.env.CONFLUENCE_OUTPUT_DIR,
   });
 
   if (!result.success) {
