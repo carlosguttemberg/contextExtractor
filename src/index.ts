@@ -1,8 +1,6 @@
 import { Command } from "commander";
 import { runPipeline } from "./pipeline/generate.js";
 import { ingestCypher } from "./graph/ingest.js";
-import { downloadConfluence } from "./confluence/downloader.js";
-import { showMenu } from "./menu.js";
 
 const program = new Command();
 
@@ -11,13 +9,13 @@ program
   .description("Gerador de grafo de projeto via Gemini + downloader Confluence")
   .version("0.1.0")
   .action(async () => {
-    // Sem subcomando — exibe menu interativo
+    const { showMenu } = await import("./menu.js");
     await showMenu();
   });
 
 program
   .command("generate")
-  .description("Extrai contexto de um projeto e grava JSONs via Gemini")
+  .description("Extrai contexto de um projeto e grava arquivos via Gemini")
   .requiredOption("--project <dir>", "Diretório do projeto a analisar")
   .option("--prompts <dir>", "Diretório dos prompts .md (sobrescreve PROMPTS_DIR)")
   .option("--output <dir>", "Diretório de saída (sobrescreve OUTPUT_DIR)")
@@ -40,6 +38,7 @@ program
   .option("--output <dir>", "Diretório de saída (sobrescreve CONFLUENCE_OUTPUT_DIR)")
   .option("--no-recursive", "Não baixar páginas filhas")
   .action(async (opts: { page: string; output?: string; recursive: boolean }) => {
+    const { downloadConfluence } = await import("./confluence/downloader.js");
     await downloadConfluence({
       pageId: opts.page,
       outputDir: opts.output,

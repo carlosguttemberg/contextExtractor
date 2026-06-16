@@ -34,9 +34,11 @@ async function processPrompt(
   dryRun: boolean
 ): Promise<PromptResult> {
   const outFile = join(outputDir, `${entry.id}.json`);
+  const outFileTxt = join(outputDir, `${entry.id}.txt`);
 
-  if (!force && existsSync(outFile)) {
-    return { id: entry.id, status: "skipped", message: "arquivo já existe (use --force para regravar)" };
+  if (!force && (existsSync(outFile) || existsSync(outFileTxt))) {
+    const existing = existsSync(outFile) ? outFile : outFileTxt;
+    return { id: entry.id, status: "skipped", message: `já existe: ${existing}` };
   }
 
   const prompt = applyPlaceholders(entry.template, vars);
@@ -48,6 +50,14 @@ async function processPrompt(
 
   try {
     const raw = await geminiGenerate(prompt);
+
+    if (!entry.schema) {
+      // Sem schema declarado no prompt — salva a resposta bruta como texto
+      await writeFile(outFile.replace(/\.json$/, ".txt"), raw);
+      return { id: entry.id, status: "ok", message: `${raw.length} chars` };
+    }
+
+    // Com schema — valida e salva JSON
     const { valid, parsed, errorMessage } = validateOutput(raw, entry.schema);
 
     if (!valid || parsed === null) {
@@ -64,7 +74,7 @@ async function processPrompt(
       console.warn(`  [cypher] ${entry.id}: ${cypherResult.errors.join("; ")}`);
     }
 
-    return { id: entry.id, status: "ok" };
+    return { id: entry.id, status: "ok", message: `JSON válido` };
   } catch (err) {
     const msg = (err as Error).message;
     const errDir = join(outputDir, "_errors");
