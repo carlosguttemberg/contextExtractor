@@ -31,7 +31,7 @@ function baseUrl(): string {
   if (!config.confluenceBaseUrl) {
     throw new Error("CONFLUENCE_BASE_URL é obrigatório para acessar o Confluence.");
   }
-  return `${config.confluenceBaseUrl.replace(/\/$/, "")}/wiki/rest/api`;
+  return `${config.confluenceBaseUrl.replace(/\/$/, "")}/rest/api`;
 }
 
 function buildTlsOptions(): { rejectUnauthorized: boolean; ca?: Buffer } {
