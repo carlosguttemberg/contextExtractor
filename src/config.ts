@@ -46,6 +46,7 @@ const ConfigSchema = z.object({
   confluenceEmail: z.string().optional(),
   confluenceApiKey: z.string().optional(),
   confluenceOutputDir: z.string().default("./output/confluence"),
+  confluenceTlsSkipVerify: z.boolean().default(false),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -69,6 +70,7 @@ function buildConfig(): Config {
     confluenceEmail: process.env.CONFLUENCE_EMAIL,
     confluenceApiKey: process.env.CONFLUENCE_API_KEY,
     confluenceOutputDir: process.env.CONFLUENCE_OUTPUT_DIR,
+    confluenceTlsSkipVerify: process.env.CONFLUENCE_TLS_SKIP_VERIFY === "true",
   });
 
   if (!result.success) {
