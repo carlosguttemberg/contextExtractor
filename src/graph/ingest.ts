@@ -1,10 +1,42 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { config } from "../config.js";
+import { processCypherForFile } from "./cypher.js";
 
 export interface IngestOptions {
   outputDir?: string;
   dryRun?: boolean;
+}
+
+async function buildCypherFiles(outputDir: string): Promise<string[]> {
+  let jsonFiles: string[];
+  try {
+    jsonFiles = (await readdir(outputDir))
+      .filter((f) => f.endsWith(".json"))
+      .sort();
+  } catch {
+    return [];
+  }
+
+  if (jsonFiles.length === 0) return [];
+
+  console.log(`\nGerando Cypher para ${jsonFiles.length} arquivo(s) JSON...`);
+  const generated: string[] = [];
+
+  for (const file of jsonFiles) {
+    const id = file.replace(/\.json$/, "");
+    const result = await processCypherForFile(id, outputDir, config.graphSchemaDir);
+    if (!result) continue;
+    if (result.errors.length > 0) {
+      console.warn(`  [aviso] ${id}: ${result.errors.join("; ")}`);
+    }
+    if (result.cypher.trim()) {
+      generated.push(`${id}.cypher`);
+      console.log(`  ✓ ${id}.cypher`);
+    }
+  }
+
+  return generated;
 }
 
 export async function ingestCypher(opts: IngestOptions = {}): Promise<void> {
@@ -13,8 +45,24 @@ export async function ingestCypher(opts: IngestOptions = {}): Promise<void> {
 
   if (!config.neo4jUri || !config.neo4jUser || !config.neo4jPassword) {
     throw new Error(
-      "NEO4J_URI, NEO4J_USER e NEO4J_PASSWORD são obrigatórios para --push."
+      "NEO4J_URI, NEO4J_USER e NEO4J_PASSWORD são obrigatórios para sincronizar."
     );
+  }
+
+  await buildCypherFiles(outputDir);
+
+  const cypherDir = join(outputDir, "cypher");
+  let files: string[];
+  try {
+    files = (await readdir(cypherDir)).filter((f) => f.endsWith(".cypher")).sort();
+  } catch {
+    console.error(`Nenhum arquivo .cypher encontrado. Execute "generate" primeiro.`);
+    return;
+  }
+
+  if (files.length === 0) {
+    console.log("Nenhum arquivo Cypher para executar.");
+    return;
   }
 
   const { default: neo4j } = await import("neo4j-driver");
@@ -23,17 +71,7 @@ export async function ingestCypher(opts: IngestOptions = {}): Promise<void> {
     neo4j.auth.basic(config.neo4jUser, config.neo4jPassword)
   );
 
-  const cypherDir = join(outputDir, "cypher");
-  let files: string[];
-  try {
-    files = (await readdir(cypherDir)).filter((f) => f.endsWith(".cypher")).sort();
-  } catch {
-    console.error(`Diretório ${cypherDir} não encontrado. Execute "generate" primeiro.`);
-    await driver.close();
-    return;
-  }
-
-  console.log(`\nIngestão Neo4j: ${files.length} arquivo(s)${dryRun ? " [dry-run]" : ""}`);
+  console.log(`\nSincronizando com Neo4j: ${files.length} arquivo(s)${dryRun ? " [dry-run]" : ""}...`);
 
   for (const file of files) {
     const content = await readFile(join(cypherDir, file), "utf-8");
@@ -64,5 +102,5 @@ export async function ingestCypher(opts: IngestOptions = {}): Promise<void> {
   }
 
   await driver.close();
-  console.log("\nIngestão concluída.");
+  console.log("\nSincronização concluída.");
 }

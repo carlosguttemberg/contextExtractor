@@ -78,7 +78,12 @@ async function downloadTree(
   }
 }
 
-export async function downloadConfluence(opts: DownloadOptions): Promise<DownloadResult[]> {
+export interface DownloadSummary {
+  results: DownloadResult[];
+  outputDir: string;
+}
+
+export async function downloadConfluence(opts: DownloadOptions): Promise<DownloadSummary> {
   const outputDir = resolve(opts.outputDir ?? config.confluenceOutputDir);
   const recursive = opts.recursive ?? true;
 
@@ -95,5 +100,5 @@ export async function downloadConfluence(opts: DownloadOptions): Promise<Downloa
   console.log(`\nResumo: ${ok} páginas salvas | ${errors} erros`);
   console.log(`Saída: ${outputDir}`);
 
-  return results;
+  return { results, outputDir };
 }

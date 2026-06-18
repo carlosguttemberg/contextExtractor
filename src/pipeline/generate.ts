@@ -7,7 +7,6 @@ import { scanProject } from "../project/scanner.js";
 import { buildContext } from "../project/context.js";
 import { loadGraphSchema } from "../graph/schema-loader.js";
 import { validateOutput } from "../graph/validate.js";
-import { generateCypher } from "../graph/cypher.js";
 import { config } from "../config.js";
 
 const CONCURRENCY = 2;
@@ -69,12 +68,7 @@ async function processPrompt(
 
     await writeFile(outFile, JSON.stringify(parsed, null, 2));
 
-    const cypherResult = await generateCypher(entry.id, parsed as import("../graph/cypher.js").GraphEnvelope, config.graphSchemaDir, outputDir);
-    if (cypherResult.errors.length > 0) {
-      console.warn(`  [cypher] ${entry.id}: ${cypherResult.errors.join("; ")}`);
-    }
-
-    return { id: entry.id, status: "ok", message: `JSON válido` };
+    return { id: entry.id, status: "ok", message: "JSON válido" };
   } catch (err) {
     const msg = (err as Error).message;
     const errDir = join(outputDir, "_errors");
