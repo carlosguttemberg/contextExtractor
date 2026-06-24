@@ -71,7 +71,7 @@ function extractRelTypes(schemaText: string): Set<string> {
   return types;
 }
 
-function escapeCypherValue(val: unknown): string {
+export function escapeCypherValue(val: unknown): string {
   if (typeof val === "string") return `"${val.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
   if (typeof val === "number" || typeof val === "boolean") return String(val);
   if (val === null || val === undefined) return "null";
@@ -85,10 +85,17 @@ function propsToMap(props: Record<string, unknown>): string {
   return `{${pairs}}`;
 }
 
+export interface NodeKey {
+  label: string;
+  keyProp: string;
+  keyValue: unknown;
+}
+
 export interface CypherResult {
   id: string;
   cypher: string;
   errors: string[];
+  nodeKeys: NodeKey[];
 }
 
 export async function generateCypher(
@@ -105,6 +112,7 @@ export async function generateCypher(
 
   const lines: string[] = [];
   const errors: string[] = [];
+  const nodeKeys: NodeKey[] = [];
 
   for (const node of envelope.nodes ?? []) {
     if (schemaLoaded && validLabels.size > 0 && !validLabels.has(node.label)) {
@@ -115,6 +123,8 @@ export async function generateCypher(
     const keyProp = keyMap.get(node.label) ?? "id";
     const keyValue = (node.properties[keyProp] ?? node.key) as unknown;
     const allProps = { ...node.properties, [keyProp]: keyValue };
+
+    nodeKeys.push({ label: node.label, keyProp, keyValue });
 
     lines.push(
       `MERGE (n:${node.label} {${keyProp}: ${escapeCypherValue(keyValue)}})`,
@@ -143,7 +153,7 @@ export async function generateCypher(
   await mkdir(cypherDir, { recursive: true });
   await writeFile(join(cypherDir, `${id}.cypher`), cypher);
 
-  return { id, cypher, errors };
+  return { id, cypher, errors, nodeKeys };
 }
 
 export async function processCypherForFile(
@@ -163,7 +173,7 @@ export async function processCypherForFile(
   try {
     envelope = JSON.parse(raw) as GraphEnvelope;
   } catch {
-    return { id, cypher: "", errors: [`JSON inválido em ${id}.json`] };
+    return { id, cypher: "", errors: [`JSON inválido em ${id}.json`], nodeKeys: [] };
   }
 
   return generateCypher(id, envelope, schemaDir, outputDir);

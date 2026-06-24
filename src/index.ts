@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { runPipeline } from "./pipeline/generate.js";
-import { ingestCypher } from "./graph/ingest.js";
+import { ingestCypher, syncApplication } from "./graph/ingest.js";
 
 const program = new Command();
 
@@ -48,11 +48,20 @@ program
 
 program
   .command("push")
-  .description("Executa os arquivos .cypher gerados contra um Neo4j")
-  .option("--output <dir>", "Diretório que contém a pasta cypher/ (padrão: OUTPUT_DIR)")
+  .description("Gera Cypher a partir dos JSONs e sincroniza com o Neo4j")
+  .option("--output <dir>", "Diretório que contém os JSONs (padrão: OUTPUT_DIR)")
   .option("--dry-run", "Imprime os statements sem executar", false)
   .action(async (opts: { output?: string; dryRun: boolean }) => {
     await ingestCypher({ outputDir: opts.output, dryRun: opts.dryRun });
+  });
+
+program
+  .command("update-app")
+  .description("Atualiza uma aplicação: limpa relacionamentos antigos e reinsere os atuais")
+  .option("--output <dir>", "Diretório que contém os JSONs (padrão: OUTPUT_DIR)")
+  .option("--dry-run", "Imprime os statements sem executar", false)
+  .action(async (opts: { output?: string; dryRun: boolean }) => {
+    await syncApplication({ outputDir: opts.output, dryRun: opts.dryRun });
   });
 
 program.parse();

@@ -2,7 +2,7 @@ import { select, input, confirm } from "@inquirer/prompts";
 import { runPipeline } from "./pipeline/generate.js";
 import { downloadConfluence } from "./confluence/downloader.js";
 import { enrichConfluence } from "./confluence/enricher.js";
-import { ingestCypher } from "./graph/ingest.js";
+import { ingestCypher, syncApplication } from "./graph/ingest.js";
 
 async function menuGemini(): Promise<void> {
   const projectDir = await input({
@@ -57,6 +57,30 @@ async function menuNeo4j(): Promise<void> {
   await ingestCypher({ dryRun });
 }
 
+async function menuUpdateApp(): Promise<void> {
+  const dryRun = await confirm({
+    message: "Dry-run? (imprime os statements sem executar no Neo4j)",
+    default: false,
+  });
+
+  console.log(
+    "\nIsso vai limpar os relacionamentos atuais dos nós gerados neste output e reinserir os dados atuais."
+  );
+  const proceed = dryRun
+    ? true
+    : await confirm({
+        message: "Confirma a atualização?",
+        default: false,
+      });
+
+  if (!proceed) {
+    console.log("Operação cancelada.");
+    return;
+  }
+
+  await syncApplication({ dryRun });
+}
+
 export async function showMenu(): Promise<void> {
   console.log("\n=== Context Extractor ===\n");
 
@@ -76,7 +100,12 @@ export async function showMenu(): Promise<void> {
       {
         name: "Sincronizar com Neo4j",
         value: "neo4j",
-        description: "Executa os arquivos .cypher gerados contra o Neo4j",
+        description: "Gera Cypher a partir dos JSONs e insere/atualiza no Neo4j",
+      },
+      {
+        name: "Atualizar aplicação no Neo4j",
+        value: "update-app",
+        description: "Limpa os relacionamentos antigos dos nós deste output e reinsere os atuais",
       },
       {
         name: "Sair",
@@ -93,4 +122,5 @@ export async function showMenu(): Promise<void> {
   if (action === "gemini") await menuGemini();
   if (action === "confluence") await menuConfluence();
   if (action === "neo4j") await menuNeo4j();
+  if (action === "update-app") await menuUpdateApp();
 }
